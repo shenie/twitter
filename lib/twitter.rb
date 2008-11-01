@@ -19,3 +19,49 @@ module Twitter
 
   SourceName = 'twittergem'
 end
+
+require 'xml/libxml'
+
+module LibXML
+  module XML
+    class Document
+      def search(expr)
+        find("/descendant::#{expr}")
+      end
+      alias_method :/, :search
+      
+      def at(expr)
+        find_first(expr)
+      end
+    end
+    
+    class Node
+      def at(expr)
+        find_first(expr)
+      end
+      
+      def get_elements_by_tag_name(expr)
+        find_first("/descendant::#{expr}")
+      end
+      
+      def innerHTML
+        content
+      end
+      alias_method :inner_html, :innerHTML
+      alias_method :text, :innerHTML
+    end
+    
+    module XPath
+      class Object
+        def search(expr)
+          first ? first.at(expr.to_s) : self
+        end
+        alias_method :/, :search
+        
+        def text
+          ''
+        end
+      end
+    end
+  end
+end

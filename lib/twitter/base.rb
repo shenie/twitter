@@ -245,7 +245,7 @@ module Twitter
       
       # Converts a string response into an Hpricot xml element.
       def parse(response)
-        Hpricot.XML(response || '')
+        XML::Parser.string(response).parse
       end
   end
 end

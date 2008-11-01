@@ -1,4 +1,5 @@
 require File.dirname(__FILE__) + '/spec_helper.rb'
+require 'xml/libxml'
 
 describe "Twitter::Base" do
   before do
@@ -20,39 +21,67 @@ describe "Twitter::Base" do
     
     it "should be able to retrieve friends timeline" do
       data = open(File.dirname(__FILE__) + '/fixtures/friends_timeline.xml').read
-      @base.should_receive(:request).and_return(Hpricot::XML(data))
+      @base.should_receive(:request).and_return(XML::Parser.string(data).parse)
       @base.timeline(:friends).size.should == 3
     end
     
     it "should be able to retrieve public timeline" do
       data = open(File.dirname(__FILE__) + '/fixtures/public_timeline.xml').read
-      @base.should_receive(:request).and_return(Hpricot::XML(data))
+      @base.should_receive(:request).and_return(XML::Parser.string(data).parse)
       @base.timeline(:public).size.should == 6
     end
     
     it "should be able to retrieve user timeline" do
       data = open(File.dirname(__FILE__) + '/fixtures/user_timeline.xml').read
-      @base.should_receive(:request).and_return(Hpricot::XML(data))
+      @base.should_receive(:request).and_return(XML::Parser.string(data).parse)
       @base.timeline(:user).size.should == 19
+    end
+  end
+  
+  describe "admirers" do
+    it "should be able to get followers" do
+      doc = XML::Document.file(File.dirname(__FILE__) + '/fixtures/followers.xml')
+      @base.should_receive(:request).and_return(doc)
+      @base.admirers.size.should == 29
+    end
+  end
+  
+  describe "using libxml" do
+    it "should be able to use libxml for followers" do
+      doc = XML::Document.file(File.dirname(__FILE__) + '/fixtures/followers.xml')
+      @base.should_receive(:request).and_return(doc)
+      @base.followers.size.should == 29
+    end
+    
+    it "should be able to use libxml for rate limit" do
+      doc = XML::Document.file(File.dirname(__FILE__) + '/fixtures/rate_limit_status.xml')
+      @base.should_receive(:request).and_return(doc)
+      @base.rate_limit_status
+    end
+    
+    it "should be able to search request document" do
+      doc = XML::Document.file(File.dirname(__FILE__) + '/fixtures/rate_limit_exceeded.xml')
+      node = doc/:hash/:error
+      node.text.should == "Rate limit exceeded"
     end
   end
   
   describe "friends and followers" do
     it "should be able to get friends" do
       data = open(File.dirname(__FILE__) + '/fixtures/friends.xml').read
-      @base.should_receive(:request).and_return(Hpricot::XML(data))
+      @base.should_receive(:request).and_return(XML::Parser.string(data).parse)
       @base.friends.size.should == 25
     end
     
     it "should be able to get friends without latest status" do
       data = open(File.dirname(__FILE__) + '/fixtures/friends_lite.xml').read
-      @base.should_receive(:request).and_return(Hpricot::XML(data))
+      @base.should_receive(:request).and_return(XML::Parser.string(data).parse)
       @base.friends(:lite => true).size.should == 15
     end
     
     it "should be able to get friends for another user" do
       data = open(File.dirname(__FILE__) + '/fixtures/friends_for.xml').read
-      @base.should_receive(:request).and_return(Hpricot::XML(data))
+      @base.should_receive(:request).and_return(XML::Parser.string(data).parse)
       timeline = @base.friends_for(20)
       timeline.size.should == 24
       timeline.first.name.should == 'Jack Dorsey'
@@ -60,7 +89,7 @@ describe "Twitter::Base" do
     
     it "should be able to get followers" do
       data = open(File.dirname(__FILE__) + '/fixtures/followers.xml').read
-      @base.should_receive(:request).and_return(Hpricot::XML(data))
+      @base.should_receive(:request).and_return(XML::Parser.string(data).parse)
       timeline = @base.followers
       timeline.size.should == 29
       timeline.first.name.should == 'Blaine Cook'
@@ -69,24 +98,24 @@ describe "Twitter::Base" do
   
   it "should be able to get single status" do
     data = open(File.dirname(__FILE__) + '/fixtures/status.xml').read
-    @base.should_receive(:request).and_return(Hpricot::XML(data))
+    @base.should_receive(:request).and_return(XML::Parser.string(data).parse)
     @base.status(803478581).created_at.should == 'Sun May 04 23:36:14 +0000 2008'
   end
   
   it "should be able to get single user" do
     data = open(File.dirname(__FILE__) + '/fixtures/user.xml').read
-    @base.should_receive(:request).and_return(Hpricot::XML(data))
+    @base.should_receive(:request).and_return(XML::Parser.string(data).parse)
     @base.user('4243').name.should == 'John Nunemaker'
   end
   
   describe "rate limit status" do
     before do 
       @data = open(File.dirname(__FILE__) + '/fixtures/rate_limit_status.xml').read
-      @base.stub!(:request).and_return(Hpricot::XML(@data))
+      @base.stub!(:request).and_return(XML::Parser.string(@data).parse)
     end
     
     it "should request the status" do
-      @base.should_receive(:request).and_return(Hpricot::XML(@data))
+      @base.should_receive(:request).and_return(XML::Parser.string(@data).parse)
       @base.rate_limit_status
     end
     
