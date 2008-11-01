@@ -54,7 +54,11 @@ module LibXML
     module XPath
       class Object
         def search(expr)
-          first ? first.at(expr.to_s) : self
+          if first && (result = first.at(expr.to_s))
+            result
+          else
+            self
+          end
         end
         alias_method :/, :search
         
